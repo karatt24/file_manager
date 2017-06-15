@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <signal.h>
@@ -17,14 +18,14 @@ int main(){
 
 	initscr();
 	signal(SIGWINCH, sig_winch);
-	curse_set(FALSE);
+	curs_set(0);
 	start_color();
 	refresh();
 	init_pair(1, COLOR_BLUE,COLOR_GREEN);
 	init_pair(2, COLOR_YELLOW, COLOR_BLUE);
 	wnd = newwin(5,18,2,4);
 	wattron(wnd,COLOR_PAIR(1));
-	box(wnd,'|','-');
+	box(wnd,'|' , '=' );
 	subwnd = derwin(wnd, 3, 16, 1, 1);
 	wbkgd(subwnd,COLOR_PAIR(2));
 	wattron(subwnd, A_BOLD);
