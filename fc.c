@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <dirent.h>
+#include <malloc.h>
 
 void sig_winch(int signo){
         struct winsize size;
@@ -16,6 +17,7 @@ int screen(DIR *dp, WINDOW *wnd1, WINDOW *wnd2){
         int y,x,i=0;
         DIR *dpp=opendir(".");
         struct  dirent *dir;
+	char *path;
         wclear(wnd1);
         wclear(wnd2);
         box(wnd1,'|','-');
@@ -55,10 +57,12 @@ int key_tab(DIR *dp, WINDOW *win,WINDOW *wnd1, WINDOW *wnd2, int ch){
 */
 void key_move(WINDOW *wnd, int ch, int sh){
 	int x,y;
+	char *str;
+	str=malloc(sizeof(char)*23);
 	switch(ch){
 		case KEY_UP:
 			getyx(wnd, y, x);
-			if (y > 0){
+			if (y > 1){
 				y--;
 				wmove(wnd, y, x);
 			}
@@ -72,7 +76,8 @@ void key_move(WINDOW *wnd, int ch, int sh){
 			break;
 		case 10:
 			getyx(wnd, y,x);
-			wprintw(wnd, "WAAAAW");
+			mvwinstr(wnd,y,x,str);
+			
 			break;
 	}
 }
@@ -84,6 +89,8 @@ int main(){
 	DIR *dp;
 	struct  dirent *dir;
 	int x,y, ch, sh=0;
+	char *str;
+	str=malloc(sizeof(char)*23);
 	dp=opendir(".");
 	initscr();
 	signal(SIGWINCH, sig_winch);
@@ -100,15 +107,6 @@ int main(){
 	wrefresh(wnd1);
 	wrefresh(wnd2);
 	wmove(wnd1, 1,1);
-/*	while((dir=readdir(dp)) != NULL){
-		wprintw(wnd1,"%s\n",dir->d_name);
-		getyx(wnd1,y,x);
-		wmove(wnd2,y-1,x+1);
-		wprintw(wnd2,"%s\n",dir->d_name);
-                wmove(wnd1, y,x+1);
-		sh++;
-	}*/
-//	wrefresh(wnd2);
 
 	sh=screen(dp, wnd1, wnd2);
 	wmove(wnd1, 1, 1);
@@ -116,9 +114,7 @@ int main(){
 	win=wnd1;
 	keypad(win, TRUE);
 	while(1){
-
 		ch = wgetch(win);
-//		sh=key_tab(dp, win, wnd1, wnd2, ch);
 		if (ch == 9)
 	                if (win == wnd1){
 	                        win=wnd2;
@@ -132,11 +128,16 @@ int main(){
                 	        wmove(win, 1,1);
 				keypad(win, TRUE);
                 	}
+		if (ch == 10){
+			getyx(win, y,x);
+                        mvwinstr(win,y,x,str);
+			wmove(win, y, x);
+			wprintw(win," %s", str);	
+		}
 
 		key_move(win, ch, sh);
 		wrefresh(win);
 		if (ch == 27){
-//			system("clear");
 			delwin(wnd1);
 			delwin(wnd2);
 			endwin();
@@ -144,7 +145,7 @@ int main(){
 		}
 	}
 
-//	getch();
+
 	system("clear");
 	endwin();
 
