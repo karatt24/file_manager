@@ -6,6 +6,7 @@
 #include <termios.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <malloc.h>
 
@@ -37,7 +38,6 @@ int fill(DIR *dp, char** path){
                 }
 
                 if (dir->d_type == DT_DIR){
-                        //path[0]="/";
                         buf=dir->d_name;
                         path[i]=redact(path[i], buf);
                 }
@@ -47,16 +47,13 @@ int fill(DIR *dp, char** path){
                 }
                 i++;
         }
-
         return i;
-
-
 }
 
 void screen(char **path,int sh, WINDOW *wnd1, WINDOW *wnd2){
         int y,x,i;
-        wclear(wnd1);
-        wclear(wnd2);
+//        wclear(wnd1);
+//        wclear(wnd2);
         box(wnd1, 0, 0);
         box(wnd2, 0, 0);
         wmove(wnd1,1,1);
@@ -66,7 +63,6 @@ void screen(char **path,int sh, WINDOW *wnd1, WINDOW *wnd2){
                 wmove(wnd2,y-1,x+1);
                 wprintw(wnd2,"%s\n",path[i]);
                 wmove(wnd1, y,x+1);
-                i++;
         }
         wrefresh(wnd1);
         wrefresh(wnd2);
@@ -134,17 +130,18 @@ int key_move(WINDOW *wnd, int ch, int sh){
 
 int main(){
 
-	WINDOW *win,*wnd1,*wnd2;
+	WINDOW *win,*wnd1,*wnd2, *sub;
 	DIR *dp;
 	struct  dirent *dir;
-	int x,y, ch, sh=0,i;
+	int x,y, ch, sh=0,i,q;
 	char *str, **path;
+	struct stat buf;
 //	str=malloc(sizeof(char)*23);
 	path=malloc(sizeof(char*)*23);
 	for(i=0; i<23;i++){
 		path[i]=malloc(sizeof(char)*256);
 	}
-	dp=opendir(".");
+	dp=opendir(getenv("PWD"));
 	initscr();
 	signal(SIGWINCH, sig_winch);
 	curs_set(TRUE);
@@ -160,55 +157,49 @@ int main(){
 	wrefresh(wnd1);
 	wrefresh(wnd2);
 	wmove(wnd1, 1,1);
-	sh=fill(path, dp);
-	sh=screen(path, dp, wnd1, wnd2);
+	sh=fill(dp, path);
+	screen(path, sh, wnd1, wnd2);
 	wmove(wnd1, 1, 1);
 	wrefresh(wnd1);
 	win=wnd1;
 	keypad(win, TRUE);
+	char *pwd;
 	while(1){
 		ch = wgetch(win);
 		if (ch == 9)
 	                if (win == wnd1){
 	                        win=wnd2;
-				sh=screen(path, dp, wnd1, wnd2);
+				screen(path, sh, wnd1, wnd2);
 	                        wmove(win, 1,1);
 				keypad(win, TRUE);
 	                }
         	        else{
                 	        win=wnd1;
-				sh=screen(path, dp, wnd1, wnd2);
+				screen(path, sh, wnd1, wnd2);
                 	        wmove(win, 1,1);
 				keypad(win, TRUE);
                 	}
 
 		if(ch == 10){
-//			getyx(win, y,x);
-                /*	winnstr(win, str, -1);
-                	if (str[0] != '/'){
-		//		getyx(win, y, x);
-                        	wprintw(win, "It's not catalog!\n");
-                	}
-			else{
-		//		getyx(win, y, x);
-				wprintw(win, "It's a catalog!\n");
+			if(path[y][0] == '/'){
+			/*	chdir();*/
+				getyx(win, y, x);
+				y--;
+				pwd=malloc(1024);
+				strcpy(pwd, getenv("PWD"));
+				strcat(pwd, path[y]);
+				wprintw(win, "%s\n", pwd);
+				free(pwd);
 			}
-                	for(i=0; i<strlen(str); i++){
-                                if(str[i] == ' '){
-                                        path[i]='\0';
-                                }
-                                path[i]=str[i+1];
-                        }*/
-//                        chdir(path);
+			else{
+				sub=derwin(win, 3,10, 10, 5);
+				box(sub, 0, 0);
+				wbkgd(sub, COLOR_PAIR(1));
+				wprintw(sub, "It's not dir!");
+				wrefresh(sub);
+				q=wgetch(sub);
+			}
 		}
-	/*	if (ch == 10){
-			getyx(win, y,x);
-                        mvwinstr(win,y,x,str);
-			wmove(win, y+1, x);
-			wprintw(win," %s", str);
-			wmove(win, y, x+1);
-		}
-*/
 		y=key_move(win, ch, sh);
 		wrefresh(win);
 		if (ch == 27){
