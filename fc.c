@@ -97,7 +97,7 @@ int key_move(WINDOW *wnd, int ch, int sh){
 
 int main(){
 
-	WINDOW *win,*wnd1,*wnd2, *sub;
+	WINDOW *win,*wnd1,*wnd2, *sub, *text;
 	DIR *dp;
 	struct  dirent **dir;
 	int x,y, ch, sh=0,i,q;
@@ -150,14 +150,23 @@ int main(){
 		}
 
 		if(ch == 10){
+			if(dir[y]->d_type == DT_DIR){
 				getyx(win, y, x);
 				y--;
 				chdir(dir[y]->d_name);
 				sh = scandir(get_current_dir_name(), &dir, 0, alphasort);
-				wclear(win);
+				wclear(wnd1);
+				wclear(wnd2);
 				screen(dir, sh, wnd1, wnd2);
 				wmove(win, 1,1);
+			}else{
+				
 			}
+		}
+	/*	if (ch == KEY_F1){
+			text = newwin(0, 0, 0, 0);
+			
+		}*/
 		y=key_move(win, ch, sh);
 		wrefresh(win);
 		if (ch == 27){
