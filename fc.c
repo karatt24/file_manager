@@ -100,9 +100,10 @@ int main(){
 	WINDOW *win,*wnd1,*wnd2, *sub, *text;
 	DIR *dp;
 	struct  dirent **dir;
-	int x,y, ch, sh=0,i,q;
+	int x,y, ch, sh=0,i, rc, q;
 	char *str, **path;
-	struct stat buf;
+	struct stat stbuf;
+	pid_t pid;
 //	str=malloc(sizeof(char)*23);
 	path=malloc(sizeof(char*)*23);
 	for(i=0; i<256;i++){
@@ -150,9 +151,17 @@ int main(){
 		}
 
 		if(ch == 10){
-			if(dir[y]->d_type == DT_DIR){
-				getyx(win, y, x);
-				y--;
+			getyx(win, y, x);
+			y--;
+			rc = stat(dir[y]->d_name, &stbuf);
+			wprintw(win, "   %s \n", dir[y]->d_name);
+			if(rc != 0){
+				wprintw(win, "Erorr by calling stat()\n");
+        			wrefresh(win);
+			}
+			if(S_ISDIR(stbuf.st_mode)){
+		/*		getyx(win, y, x);
+				y--;*/
 				chdir(dir[y]->d_name);
 				sh = scandir(get_current_dir_name(), &dir, 0, alphasort);
 				wclear(wnd1);
@@ -160,12 +169,40 @@ int main(){
 				screen(dir, sh, wnd1, wnd2);
 				wmove(win, 1,1);
 			}else{
-				
+				if(stbuf.st_mode & S_IXUSR){
+
+					wclear(wnd1);
+                                	wclear(wnd2);
+					wclear(win);
+					delwin(wnd1);
+                                        delwin(wnd2);
+                                        delwin(win);
+					clear();
+					endwin();
+
+					pid = fork();
+					if(pid == 0){
+						execlp(dir[y]->d_name, dir[y]->d_name, NULL, NULL);
+					}else{
+						wait();}
+						wnd1 = newwin(25,40,1,1);
+					        wnd2 = newwin(25,40,1,42);
+						box(wnd1, 0, 0);
+       						box(wnd2, 0, 0);
+        					wbkgd(wnd1, COLOR_PAIR(1));
+        					wbkgd(wnd2, COLOR_PAIR(1));
+						win = wnd1;
+						sh = scandir(get_current_dir_name(), &dir, 0, alphasort);
+						screen(dir, sh, wnd1, wnd2);
+        					wrefresh(wnd1);
+        					wrefresh(wnd2);
+
+				/*	}*/
+				}
 			}
 		}
 	/*	if (ch == KEY_F1){
 			text = newwin(0, 0, 0, 0);
-			
 		}*/
 		y=key_move(win, ch, sh);
 		wrefresh(win);
