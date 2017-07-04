@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <malloc.h>
+#include <limits.h>
 
 void sig_winch(int signo){
         struct winsize size;
@@ -101,10 +102,12 @@ int main(){
 	DIR *dp;
 	struct  dirent **dir;
 	int x,y, ch, sh=0,i, rc, q;
-	char *str, **path;
+	char *str, **path, *buf, *op;
 	struct stat stbuf;
 	pid_t pid;
 //	str=malloc(sizeof(char)*23);
+	buf = malloc(PATH_MAX);
+	op = malloc(PATH_MAX);
 	path=malloc(sizeof(char*)*23);
 	for(i=0; i<256;i++){
 		path[i]=malloc(sizeof(char)*256);
@@ -180,11 +183,17 @@ int main(){
 					clear();
 					endwin();
 
+					op = "./";
+					strcat(buf, op);
+					strcat(buf, dir[y]->d_name);
 					pid = fork();
 					if(pid == 0){
-						execlp(dir[y]->d_name, dir[y]->d_name, NULL, NULL);
+						execlp(buf, buf, NULL, NULL);
 					}else{
-						wait();}
+						wait();
+						getchar();
+					}
+						initscr();
 						wnd1 = newwin(25,40,1,1);
 					        wnd2 = newwin(25,40,1,42);
 						box(wnd1, 0, 0);
